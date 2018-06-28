@@ -24,6 +24,7 @@ from pr2_robot.srv import *
 from rospy_message_converter import message_converter
 import yaml
 
+nbins=64
 
 # Helper function to get surface normals
 def get_normals(cloud):
@@ -64,83 +65,65 @@ def create_cluster_mask(white_cloud, cluster_indices):
                                            )
     return color_cluster_point_list
 
-def segment_objects(cloud_objects):
+def segment_objects(white_cloud):
     """
     Cluster extraction and create cluster mask
     """
-    white_cloud = XYZRGB_to_XYZ(cloud_objects)
     tree = white_cloud.make_kdtree()
 
     # Create a cluster extraction object
     ec = white_cloud.make_EuclideanClusterExtraction()
     # Set tolerances for distance threshold
     # as well as minimum and maximum cluster sizes (in points)
-    ec.set_ClusterTolerance(0.02)
-    ec.set_MinClusterSize(10)
-    ec.set_MaxClusterSize(2000)
+    ec.set_ClusterTolerance(0.025)
+    ec.set_MinClusterSize(50)
+    ec.set_MaxClusterSize(20000)
     ec.set_SearchMethod(tree)
     cluster_indices = ec.Extract()
     return cluster_indices, white_cloud
 
 
 def statistical_filter(pcl_data):
-
-    # TODO: Stastical Outlier Filtering
+    "Filter the pcl data"
     # pcl_data = XYZRGB_to_XYZ(pcl_data)
     outlier_filter = pcl_data.make_statistical_outlier_filter()
-
     # Set the neighboring points to be 50
-    outlier_filter.set_mean_k(30)
-
+    outlier_filter.set_mean_k(20)
     # Set the threshold scale factor
-    noise_sigma_scale = .25
-
+    noise_sigma_scale = 0.1
     # Any point with a distance larger than the global distance
     # mean_distance + std_dev*noise_thres will be considered outlier
     outlier_filter.set_std_dev_mul_thresh(noise_sigma_scale)
-
     cloud_filtered = outlier_filter.filter()
-
     return cloud_filtered
 
-# Callback function for your Point Cloud Subscriber
-def pcl_callback(pcl_msg):
 
-    # Exercise-2 TODOs:
-
-    # TODO: Convert ROS msg to PCL data
-    cloud = ros_to_pcl(pcl_msg)
-    cloud = statistical_filter(cloud)
-    # pcl_cluster_pub.publish(pcl_to_ros(cloud))
-
-    # TODO: Voxel Grid Downsampling
-    vox = cloud.make_voxel_grid_filter()
-    LEAF_SIZE = 0.01
-    vox.set_leaf_size(LEAF_SIZE, LEAF_SIZE, LEAF_SIZE)
-    cloud_filtered = vox.filter()
-
-
-    # TODO: PassThrough Filter
-    passthrough = cloud_filtered.make_passthrough_filter()
+def get_roi(pcd_cloud):
+    "Get the area around the table"
+    passthrough = pcd_cloud.make_passthrough_filter()
     filter_axis = 'z'
     passthrough.set_filter_field_name(filter_axis)
     axis_min = 0.6; axis_max=1
     passthrough.set_filter_limits(axis_min, axis_max)
-    cloud_filtered = passthrough.filter()
+    pcd_cloud = passthrough.filter()
 
-    if 1:
-        passthrough_y = cloud_filtered.make_passthrough_filter()
-        filter_axis = 'y'
-        passthrough_y.set_filter_field_name(filter_axis)
-        axis_min = -.5; axis_max=.5
-        passthrough_y.set_filter_limits(axis_min, axis_max)
-        cloud_filtered = passthrough_y.filter()
+    passthrough_y = pcd_cloud.make_passthrough_filter()
+    filter_axis = 'y'
+    passthrough_y.set_filter_field_name(filter_axis)
+    axis_min = -.4; axis_max=.4
+    passthrough_y.set_filter_limits(axis_min, axis_max)
+    pcd_cloud = passthrough_y.filter()
+    return pcd_cloud
 
-    #ros_cloud_passthrough = pcl_to_ros(cloud_filtered)
-    #pcl_table_pub.publish(ros_cloud_passthrough)
+def downsample_cloud(pcd_cloud):
+    vox = pcd_cloud.make_voxel_grid_filter()
+    LEAF_SIZE = 0.005
+    vox.set_leaf_size(LEAF_SIZE, LEAF_SIZE, LEAF_SIZE)
+    return vox.filter()
 
-    # TODO: RANSAC Plane Segmentation
-    seg = cloud_filtered.make_segmenter()
+
+def plane_fitting(pcd_cloud):
+    seg = pcd_cloud.make_segmenter()
     seg.set_model_type(pcl.SACMODEL_PLANE)
     seg.set_method_type(pcl.SAC_RANSAC)
 
@@ -148,80 +131,129 @@ def pcl_callback(pcl_msg):
     max_distance = 0.03
     seg.set_distance_threshold(max_distance)
     inliers, coefficients = seg.segment()
-    cloud_table = cloud_filtered.extract(inliers, negative=False)
-    cloud_objects = cloud_filtered.extract(inliers, negative=True)
-    ros_cloud_objects = pcl_to_ros(cloud_objects)
-    ros_cloud_table = pcl_to_ros(cloud_table)
+    cloud_table = pcd_cloud.extract(inliers, negative=False)
+    cloud_objects = pcd_cloud.extract(inliers, negative=True)
+    return cloud_table, cloud_objects
 
-    if 0:
-        pcl.save(cloud_objects, 'cloud_objects.pcd')
+# Callback function for your Point Cloud Subscriber
+def pcl_callback(pcl_msg):
+    # TODO: Convert ROS msg to PCL data
+    cloud = ros_to_pcl(pcl_msg)
+    filtered_cloud = statistical_filter(cloud)
+
+    # TODO: Voxel Grid Downsampling
+    downsampled_cloud = downsample_cloud(filtered_cloud)
+
+    # TODO: PassThrough Filter
+    region_cloud= get_roi(downsampled_cloud)
+    pcl_debug_pub.publish(pcl_to_ros(region_cloud))
+
+    # TODO: RANSAC Plane Segmentation
+    cloud_table, cloud_objects = plane_fitting(region_cloud)
 
     # TODO: Euclidean Clustering
-    cluster_indices, white_cloud = segment_objects(cloud_objects)
+    white_cloud = XYZRGB_to_XYZ(cloud_objects)
 
+    cluster_indices = segment_objects(white_cloud)
     # TODO: Create Cluster-Mask Point Cloud to visualize each cluster separately
     color_cluster_point_list = create_cluster_mask(white_cloud, cluster_indices)
     cluster_cloud = pcl.PointCloud_PointXYZRGB()
     cluster_cloud.from_list(color_cluster_point_list)
     ros_cluster_cloud = pcl_to_ros(cluster_cloud)
 
+    # TODO: Publish ROS messages
+    ros_cloud_objects = pcl_to_ros(cloud_objects)
+    ros_cloud_table = pcl_to_ros(cloud_table)
     pcl_objects_pub.publish(ros_cloud_objects)
     pcl_table_pub.publish(ros_cloud_table)
     pcl_cluster_pub.publish(ros_cluster_cloud)
 
-    # TODO: Publish ROS messages
 
+    # Exercise-3 TODOs:
+    detected_objects_labels=[]
+    detected_objects = []
 
-# Exercise-3 TODOs:
-    if 1:
-        # Classify the clusters! (loop through each detected cluster one at a time)
-        detected_objects_labels=[]
-        detected_objects = []
+    # Grab the points for the cluster
+    for index, pts_list in enumerate(cluster_indices):
+        # Grab the points for the cluster from the extracted outliers (cloud objects)
+        pcl_cluster = cloud_objects.extract(pts_list)
+        # TODO: convert the cluster from pcl to ROS
+        ros_cluster = pcl_to_ros(pcl_cluster)
 
-        # Grab the points for the cluster
-        for index, pts_list in enumerate(cluster_indices):
-            # Grab the points for the cluster from the extracted outliers (cloud objects)
-            pcl_cluster = cloud_objects.extract(pts_list)
-            # TODO: convert the cluster from pcl to ROS
-            ros_cluster = pcl_to_ros(pcl_cluster)
+        # Compute the associated feature vector
+        chists = compute_color_histograms(ros_cluster, using_hsv=True, nbins=nbins)
+        normals = get_normals(ros_cluster)
+        nhists = compute_normal_histograms(normals, nbins=nbins)
+        feature = np.concatenate((chists, nhists))
 
-            # Compute the associated feature vector
-            chists = compute_color_histograms(ros_cluster, using_hsv=True, nbins=64)
-            normals = get_normals(ros_cluster)
-            nhists = compute_normal_histograms(normals, nbins=64)
-            feature = np.concatenate((chists, nhists))
+        # Make the prediction
+        prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
+        label = encoder.inverse_transform(prediction)[0]
+        detected_objects_labels.append(label)
 
-            # Make the prediction
-            prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
-            label = encoder.inverse_transform(prediction)[0]
-            detected_objects_labels.append(label)
+        # Publish a label into RViz
+        label_pos = list(white_cloud[pts_list[0]])
+        label_pos[2] = label_pos[2] + 0.2
+        object_markers_pub.publish(make_label(label, label_pos, index))
 
-            # Publish a label into RViz
-            label_pos = list(white_cloud[pts_list[0]])
-            #label_pos += .4
-            object_markers_pub.publish(make_label(label, label_pos, index))
+        # Add the detected object to the list of detected objects.
+        do = DetectedObject()
+        do.label = label
+        do.cloud = ros_cluster
+        detected_objects.append(do)
 
-            # Add the detected object to the list of detected objects.
-            do = DetectedObject()
-            do.label = label
-            do.cloud = ros_cluster
-            detected_objects.append(do)
-
-            # Publish the list of detected objects
-            rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
-            # rospy.loginfo('Detected {}'.format(len(detected_objects_labels))
-
-            detected_objects_pub.publish(detected_objects)
-
-    # Suggested location for where to invoke your pr2_mover() function within pcl_callback()
-    # Could add some logic to determine whether or not your object detections are robust
-    # before calling pr2_mover()
+    # Publish the list of detected objects
+    rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels),
+                                                   detected_objects_labels))
+    rospy.loginfo('Detected {}'.format(len(detected_objects_labels)))
+    detected_objects_pub.publish(detected_objects)
 
     if 1:
         try:
             pr2_mover(detected_objects)
         except rospy.ROSInterruptException:
             pass
+
+
+def parse_launch_file(xmlfile):
+    import xml.etree.ElementTree as ET
+    tree = ET.parse(xmlfile)
+    root = tree.getroot()
+
+    # find world setup id
+    def get_world_id():
+        world_id = -1
+        elems=root.findall('include')
+        for elem in elems:
+            for elem_items in elem:
+                if elem_items[1].str('empty_world.launch'):
+                    args = elem.getchildren()
+                    for k,v in args:
+                        if v.find('worlds/test'):
+                            world_ind = v.find('.world')
+                            world_id = int(v[world_ind-1])
+                            break
+        return world_id
+
+    # find pick list id
+    def get_pick_list_id():
+        elems = root.findall('rosparam')
+        ipdb.set_trace()
+        pick_list_id = -1
+        for elem in elems:
+            for items in elem:
+                filestr = [x[1] for x in items if x[0]=='file']
+                filestr = filestr[0]
+                if filestr.find('pick_list'):
+                    ind = filestr.find('.yaml')
+                    pick_list_id = int(filestr[ind-1])
+
+        return pick_list_id
+
+    pick_list_id = get_pick_list_id()
+    world_id = get_world_id()
+    return pick_list_id, world_id
+
 
 # function to load parameters and request PickPlace service
 def pr2_mover(object_list):
@@ -232,60 +264,88 @@ def pr2_mover(object_list):
 
     # TODO: Get/Read parameters
     object_list_param = rospy.get_param('/object_list')
-    # TODO: Parse parameters into individual variables
-    object_name = object_list_param[i]['name']
-    object_group = object_list_param[i]['group']
+    drop_items = rospy.get_param('/dropbox')
 
-    if 0:
-        do = DetectedObject()
-        do.label = label
-        do.cloud = ros_cluster
-        detected_objects.append(do)
+    # create a dictionary with color green as the key
+    drop_position = dict()
+    for drop_item in drop_items:
+        drop_position[drop_item['group']] = (drop_item['name'],drop_item['position'])
+
+    test_scene_num = Int32()
+    test_scene_num.data = 3
+
+    dict_list = []
 
     # TODO: Rotate PR2 in place to capture side tables for the collision map
     # TODO: Loop through the pick list
     for pick_object in object_list_param:
         for object in object_list:
-            if object.label == pick_object:
-                labels.append(object.label)
-                # TODO: Get the PointCloud for a given object and obtain it's centroid
-                point_arr = ros_to_pcl(object.cloud).to_array()
+            if object.label == pick_object['name']:
+                # if their is a match create msg
+                object_name = String()
+                arm_name = String()
+                pick_pose = Pose()
+                place_pose = Pose()
+
+                # name
+                object_name.data = pick_object['name']
+
+                # pickpose
+                # Get the PointCloud for a given object and obtain it's centroid
+                points_arr = ros_to_pcl(object.cloud).to_array()
                 tmp =  np.mean(points_arr, axis=0)[:3]
-                tmp[0] = np.asscalar(tmp[0])
-                tmp[1] = np.asscalar(tmp[1])
-                tmp[2] = np.asscalar(tmp[2])
+                pick_pose.position.x = np.asscalar(tmp[0])
+                pick_pose.position.y = np.asscalar(tmp[1])
+                pick_pose.position.z = np.asscalar(tmp[2])
+
+                labels.append(object.label)
                 centroids.append(tmp)
 
-    # TODO: Create 'place_pose' for the object
-    # Parse the dropbox.
-    drop_items = rospy.get_param('/dropbox')
-    group = drop_items[i]['group']
-    position = drop_items[i]['position']
+                # based on group (green or red) place object in left or right bins
+                object_group = pick_object['group']
+                arm_name.data = drop_position[object_group][0]
 
-    # TODO: Assign the arm to be used for pick_place
-    if group=='green' arm_name == 'right'
-    
+                position = drop_position[object_group][1]
+                eps1 = 0.01
+                new_pos = [p + eps1*np.random.rand() for p in position]
+
+                place_pose.position.x = new_pos[0]
+                place_pose.position.y = new_pos[1]
+                place_pose.position.z = new_pos[2]
+
+                yaml_dict = make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose,
+                                           place_pose)
+                dict_list.append(yaml_dict)
+
+
+    yaml_filename = '/home/robond/catkin_ws/output.yaml'
+    send_to_yaml(yaml_filename, dict_list)
+
     # TODO: Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
 
-    # Wait for 'pick_place_routine' service to come up
-    rospy.wait_for_service('pick_place_routine')
+    if 0:
+        # Wait for 'pick_place_routine' service to come up
+        rospy.wait_for_service('pick_place_routine')
 
-    try:
-        pick_place_routine = rospy.ServiceProxy('pick_place_routine', PickPlace)
+        try:
+            pick_place_routine = rospy.ServiceProxy('pick_place_routine', PickPlace)
 
-        # TODO: Insert your message variables to be sent as a service request
-        resp = pick_place_routine(TEST_SCENE_NUM, OBJECT_NAME, WHICH_ARM, PICK_POSE, PLACE_POSE)
+            # TODO: Insert your message variables to be sent as a service request
+            resp = pick_place_routine(TEST_SCENE_NUM, OBJECT_NAME, WHICH_ARM, PICK_POSE, PLACE_POSE)
+            print ("Response: ",resp.success)
 
-        print ("Response: ",resp.success)
-
-    except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
 
     # TODO: Output your request parameters into output yaml file
 
 
 
 if __name__ == '__main__':
+
+  if 0:
+      xmlfile = '/home/robond/catkin_ws/src/RoboND-Perception-Project/pr2_robot/launch/pick_place_project.launch'
+      world_id, pick_id =  parse_launch_file(xmlfile)
 
   if 0:
       indir = '/home/robond/data'
@@ -304,13 +364,20 @@ if __name__ == '__main__':
     pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
     pcl_table_pub = rospy.Publisher("/pcl_table", PointCloud2, queue_size=1)
     pcl_cluster_pub = rospy.Publisher("/pcl_cluster", PointCloud2, queue_size=1)
+    pcl_debug_pub = rospy.Publisher("/pcl_filtered", PointCloud2, queue_size=1)
+
 
     # TODO: additional publishers
     object_markers_pub = rospy.Publisher("/object_markers", Marker, queue_size=1)
     detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
 
     # TODO: Load Model From disk
-    model = pickle.load(open('/home/robond/catkin_ws/model.sav', 'rb'))
+    outdir =  '/home/robond/data/object_recognition/'
+    version=6; nbins=64; samples=300; kernel_type='rbf'
+    model_file = 'model{}_samples{}_nbins{}_kernel_{}.sav'.format(version, samples, nbins,  kernel_type)
+    model_name = 'model6_nbin64.sav'
+    full_model_name = '{}/{}'.format(outdir,model_name)
+    model = pickle.load(open(full_model_name, 'rb'))
     print ("Loaded the model")
 
     clf = model['classifier']
