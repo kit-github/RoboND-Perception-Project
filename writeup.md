@@ -35,7 +35,7 @@ You're reading it!
 
 
 Here is an example of how to include an image in your writeup.
-     ! [exercise-3 - confusion matrix - normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/figure_1.png)
+     ![exercise-3 - confusion matrix - normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/figure_1.png)
 ![demo-1](https://user-images.githubusercontent.com/20687560/28748231-46b5b912-7467-11e7-8778-3095172b7b19.png)
 
 ### Pick and Place Setup
