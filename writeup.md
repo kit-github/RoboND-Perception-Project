@@ -3,12 +3,7 @@
 ### Exercise 1, 2 and 3 pipeline implemented
 #### 1. Complete Exercise 1 steps. Pipeline for filtering and RANSAC plane fitting implemented.
 
- - Used statistical filter with mean 30 and noise sigma of 0.25 to remove the outliers. Anything beyond mean_distance + std_dev*noise_thres is considered outlier and removed. The filtered cloud doesn't have the local outlier points in it.
-
-![screenshots]
-(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cloud_with_noise.png)
-
-(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/filtered_point_cloud.png)
+ - Used statistical filter with mean 30 and noise sigma of 0.25 to remove the outliers. Anything beyond mean_distance + std_dev*noise_thres is considered outlier and removed. The filtered cloud doesn't have the local outlier points in it.![screenshots](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cloud_with_noise.png) and (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/filtered_point_cloud.png)
 
 
 #### 2. Complete Exercise 2 steps: Pipeline including clustering for segmentation implemented.
