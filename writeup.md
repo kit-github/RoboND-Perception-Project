@@ -23,15 +23,19 @@
 #### 2. Complete Exercise 3 Steps.  Features extracted and SVM trained.  Object recognition implemented.
 
 - **Training Object Classifier** 
+The classifier was trained with many different combination of parameters. Although most of them setting performed well on validation, I had to made extra adjustment to make sure the model performs well at test time. The final parameters here are coming from some of these choices I made for imporving generalization of classifier. Please see section 'Issues with Classifier Generalization and Fixes' below for more details. 
  - Took 500 samples to capture features.
  - Used linear svm with default parameters
  - Used HSV color space
- - Increased number of bins to 64 from 32 (for both the color and normals)
+ - Increased number of bins to 64 from 32 (for both the color and normals). This increased the performance. Increasing to 128 worked well but was overfitting. 
  - Trained the network using train_svm script
- - Below are the results of training the network
- ![Accuracy - console snapshot](https://github.com/kitu2007/RoboND-Perception- Project/blob/master/data/train/train_performance.png)
+ - increased the SVM penalty C to 10. 
+
+- Below are the results of training the network
+ ![Accuracy - console snapshot](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/train_performance.png)
  ![confusion matrix - normalized](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/normalized_train_performance.png)
- ![confusion matrix - un-normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/un_normalized_train_performance.png)
+ ![confusion matrix - un-normalized](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/un_normalized_train_performance.png)
+
 
  
  - **Test Time** 
