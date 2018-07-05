@@ -49,33 +49,33 @@ The classifier was trained with many different combination of parameters. Althou
 
 
 ### Pick and Place Setup
-    - Now for all the detected objects
-    - Read the list of objects to be picked and also
-    - Find the location where the object needs to be placed by listening to '/dropbox' topic
-    - create a dictionary with group name since green group goes to right bin
-    - Populate fields needed for output messages
-       - test_scene_num remains the same.
-       - object_name, arm_name, pick_pose and place_pose depends on each object and in created in the loop.
-       - we create the centriods for each of the object, which is used to assign the pick_pose of the object.
-       - the place_pose is determined by the position of the right and left bin centers. The bin in which object is placed depends on the group an object belongs to.
-       - create yaml dictionary using the helper function and append them in a list
-       - write the list to the yaml_file. Each scene gets its own output file
+For the pick and place operation, we need the following steps. 
+- first get the list of objects that are supposed to be in a given scene by getting the params by listening to '/object_list'. 
+- Then we also listen to '/dropbox' topic to know the location of the red and green bins where the object needs to be placed. We add a little jitter so objects aren't placed on top of each other within each bins. 
+- Using this info I create a dictionary with group name as the key. Since the group decides the bin the object is supposed to be placed it serves as a good key.
+
+- With this info we now take the list of detected objects, run the classifier on each of the detected object and if the name of the detected object matches the list of pick objects in the scene, we populate the fields needed for output the .yaml messages. For each of identified object, we create       
+- object_name. The label provided by the classifier
+- arm_name. Based on the group of the object. 
+- pick_pose. Centroid computed by using the mean of the 3d points. 
+- place_pose. Location of the left or right bin depending on the group of the object. 
+
+We then create a yaml dictionary using the helper function and append them in a list, which is then written to a yaml_file using the helper function. Please see below for the yaml files for each scene and the screen shots. 
 
 #### 1. For all three tabletop setups (`test*.world`), perform object recognition, then read in respective pick list (`pick_list_*.yaml`). Next construct the messages that would comprise a valid `PickPlace` request output them to `.yaml` format.
 
 For all the three setup, I ran the above code and dumped the .yaml files and the screen shots. Please see the mentioned .yaml file and the screen shots. 
 The output of the three setup is recorded in the yaml files below
-![output_1.yaml](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_1.yaml)
-![output_2.yaml](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_2.yaml)
-![output_3.yaml](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_3.yaml)
+![output_1.yaml](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/output_1.yaml)
+![output_2.yaml](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/output_2.yaml)
+![output_3.yaml](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/output_3.yaml)
 
  Here are the screen shots with the labels shown in rviz 
-![scene1](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/test_scene_1.png)
-![scene2](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/test_scene_2.png)
-![scene3](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/test_scene_3.png))
+![scene1](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_1.png)
+![scene2](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_2.png)
+![scene3](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_3.png))
 
-Spend some time at the end to discuss your code, what techniques you used, what worked and why, where the implementation might fail and how you might improve it if you were going to pursue this project further.  
-
+## Discussion 
 **Issues with Classifier Generalization and Fixes** 
 Had issues with classifier not working well at test time, even though the classifier performed well on validation set. It was failing to generalize well to all the three scenes. I read some comments suggesting that the test scenario is different from the training scenario. I made several changes to handle the differences. which are mentioned here. 
 - First I caputred many more samples to handle pose variation and occlusion during test time. 
