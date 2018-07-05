@@ -80,7 +80,7 @@ def segment_objects(white_cloud):
     ec.set_MaxClusterSize(20000)
     ec.set_SearchMethod(tree)
     cluster_indices = ec.Extract()
-    return cluster_indices, white_cloud
+    return cluster_indices
 
 
 def statistical_filter(pcl_data):
@@ -146,10 +146,10 @@ def pcl_callback(pcl_msg):
 
     # TODO: PassThrough Filter
     region_cloud= get_roi(downsampled_cloud)
-    pcl_debug_pub.publish(pcl_to_ros(region_cloud))
 
     # TODO: RANSAC Plane Segmentation
     cloud_table, cloud_objects = plane_fitting(region_cloud)
+
 
     # TODO: Euclidean Clustering
     white_cloud = XYZRGB_to_XYZ(cloud_objects)
@@ -159,14 +159,11 @@ def pcl_callback(pcl_msg):
     color_cluster_point_list = create_cluster_mask(white_cloud, cluster_indices)
     cluster_cloud = pcl.PointCloud_PointXYZRGB()
     cluster_cloud.from_list(color_cluster_point_list)
-    ros_cluster_cloud = pcl_to_ros(cluster_cloud)
 
     # TODO: Publish ROS messages
-    ros_cloud_objects = pcl_to_ros(cloud_objects)
-    ros_cloud_table = pcl_to_ros(cloud_table)
-    pcl_objects_pub.publish(ros_cloud_objects)
-    pcl_table_pub.publish(ros_cloud_table)
-    pcl_cluster_pub.publish(ros_cluster_cloud)
+    pcl_objects_pub.publish(pcl_to_ros(cloud_objects))
+    pcl_table_pub.publish(pcl_to_ros(cloud_table))
+    pcl_cluster_pub.publish(pcl_to_ros(cluster_cloud))
 
 
     # Exercise-3 TODOs:
@@ -318,7 +315,7 @@ def pr2_mover(object_list):
                 dict_list.append(yaml_dict)
 
 
-    yaml_filename = '/home/robond/catkin_ws/output.yaml'
+    yaml_filename = '/home/robond/catkin_ws/output_{}.yaml'.format(test_scene_num.data)
     send_to_yaml(yaml_filename, dict_list)
 
     # TODO: Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
@@ -364,8 +361,6 @@ if __name__ == '__main__':
     pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
     pcl_table_pub = rospy.Publisher("/pcl_table", PointCloud2, queue_size=1)
     pcl_cluster_pub = rospy.Publisher("/pcl_cluster", PointCloud2, queue_size=1)
-    pcl_debug_pub = rospy.Publisher("/pcl_filtered", PointCloud2, queue_size=1)
-
 
     # TODO: additional publishers
     object_markers_pub = rospy.Publisher("/object_markers", Marker, queue_size=1)
@@ -373,10 +368,10 @@ if __name__ == '__main__':
 
     # TODO: Load Model From disk
     outdir =  '/home/robond/data/object_recognition/'
-    version=6; nbins=64; samples=300; kernel_type='rbf'
-    model_file = 'model{}_samples{}_nbins{}_kernel_{}.sav'.format(version, samples, nbins,  kernel_type)
-    model_name = 'model6_nbin64.sav'
-    full_model_name = '{}/{}'.format(outdir,model_name)
+    version=7; nbins=64; samples=500; kernel_type='linear'; cost=10
+    model_file = 'model{}_samples{}_nbins{}_kernel_{}_C_{}.sav'.format(version, samples, nbins,  kernel_type, cost)
+    # model_name = 'model6_nbin64.sav'
+    full_model_name = '{}/{}'.format(outdir,model_file)
     model = pickle.load(open(full_model_name, 'rb'))
     print ("Loaded the model")
 

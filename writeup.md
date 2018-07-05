@@ -10,17 +10,37 @@ You're reading it!
 
  - Used statistical filter with mean 30 and noise sigma of 0.25 to remove the outliers. Anything beyond mean_distance + std_dev*noise_thres is considered outlier and removed. The filtered cloud doesn't have the local outlier points in it.
 
+![screenshots]
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cloud_with_noise.png)
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/filtered_point_cloud.png)
+
 
 #### 2. Complete Exercise 2 steps: Pipeline including clustering for segmentation implemented.
      - Downsampled the voxel_grid using leaf size of 0.01 but can be made lower to increase resolution. This is mainly done for computational efficiency since original pointcloud can be very dense.
+     ![screenshots]
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/downsampled_point_cloud.png)
+
+
+
      - We then use passthrough filter to remove anything that is not interesting to us, like table leg and other stuff. We are mainly interested in the objects on the table top
+     ![screenshots]
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/roi_point_cloud.png)
+
      - Since we know we have dominant points coming from table, we use ransac to find a plane. Points that lie within plane are table points and outliers are the objects we care about.
+      ![screenshots]
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/table_point_cloud.png)
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/object_point_cloud.png)
+
+
      - Next we use dbscan to cluster these objects, based on euclidean distance and min and max cluster sizes.  See function segment_objects in project.py
+      ![screenshots]
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cluster_point_cloud.png)
+
      - The cluster indices from clustering algo is used for getting individual objects.
      - publish the point clouds
 
 #### 2. Complete Exercise 3 Steps.  Features extracted and SVM trained.  Object recognition implemented.
-     - Took 300 samples to capture features.
+     - Took 500 samples to capture features.
      - Used linear svm with default parameters
      - Used HSV color space
      - Increased number of bins to 64 from 32 (for both the color and normals)
@@ -35,11 +55,22 @@ You're reading it!
 
 
 Here is an example of how to include an image in your writeup.
-     ![exercise-3 - confusion matrix - normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/figure_1.png)
+     ![exercise-3 - confusion matrix - normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/confusion_matrix_norm_version7_samples500_nbins64_kernel_linear_C10.png)
+     [exercise-3 - confusion matrix - un-normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/confusion_matrix_version7_samples500_nbins64_kernel_linear_C10.png)
+
 ![demo-1](https://user-images.githubusercontent.com/20687560/28748231-46b5b912-7467-11e7-8778-3095172b7b19.png)
 
-### Pick and Place Setup
+![demo-1](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_1.yaml)
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_2.yaml)
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_3.yaml)
 
+![screenshots]
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/test_scene_1.png)
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/test_scene_2.png)
+(https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/test_scene_3.png))
+
+
+### Pick and Place Setup
     - Now for all the detected objects
     - Read the list of objects to be picked and also
     - Find the location where the object needs to be placed by listening to '/dropbox' topic
