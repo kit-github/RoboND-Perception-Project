@@ -3,7 +3,8 @@
 ### Exercise 1, 2 and 3 pipeline implemented
 #### 1. Complete Exercise 1 steps. Pipeline for filtering and RANSAC plane fitting implemented.
 
- - Used statistical filter with mean 30 and noise sigma of 0.25 to remove the outliers. Anything beyond mean_distance + std_dev*noise_thres is considered outlier and removed. The filtered cloud doesn't have the local outlier points in it.![noisy](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cloud_with_noise.png) and [filtered](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/filtered_point_cloud.png)
+ - Used statistical filter with mean 30 and noise sigma of 0.25 to remove the outliers. Anything beyond mean_distance + std_dev*noise_thres is considered outlier and removed. The filtered cloud doesn't have the local outlier points in it.
+ Noisy ![noisy](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cloud_with_noise.png) and Filtered ![filtered](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/filtered_point_cloud.png)
 
 
 #### 2. Complete Exercise 2 steps: Pipeline including clustering for segmentation implemented.
@@ -12,7 +13,7 @@
 
 - **PassThrough Filter** We then use passthrough filter to remove anything that is not interesting to us, like table leg and other stuff. We are mainly interested in the objects on the table top. See ![region of interest](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/roi_point_cloud.png)
 
- -**Plane Fitting** Since we know we have dominant points coming from table, we use ransac to find a plane. Points that lie within plane are table points and outliers are the objects we care about.See ![table point cloud](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/table_point_cloud.png) and ![object point cloud](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/object_point_cloud.png)
+ -**Plane Fitting** Since we know we have dominant points coming from table, we use ransac to find a plane. Points that lie within plane are table points and outliers are the objects we care about. See ![table point cloud](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/table_point_cloud.png) and ![object point cloud](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/object_point_cloud.png)
 
 
  -**Clustering**  Next we use dbscan to cluster these objects, based on euclidean distance and min and max cluster sizes.  See function segment_objects in project.py. Here are outputs of ![clustering](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cluster_point_cloud.png)
