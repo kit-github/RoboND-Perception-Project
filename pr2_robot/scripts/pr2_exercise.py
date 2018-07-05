@@ -65,6 +65,7 @@ def create_cluster_mask(white_cloud, cluster_indices):
                                            )
     return color_cluster_point_list
 
+
 def segment_objects(white_cloud):
     """
     Cluster extraction and create cluster mask
@@ -114,6 +115,7 @@ def get_roi(pcd_cloud):
     passthrough_y.set_filter_limits(axis_min, axis_max)
     pcd_cloud = passthrough_y.filter()
     return pcd_cloud
+
 
 def downsample_cloud(pcd_cloud):
     vox = pcd_cloud.make_voxel_grid_filter()
@@ -212,46 +214,6 @@ def pcl_callback(pcl_msg):
             pass
 
 
-def parse_launch_file(xmlfile):
-    import xml.etree.ElementTree as ET
-    tree = ET.parse(xmlfile)
-    root = tree.getroot()
-
-    # find world setup id
-    def get_world_id():
-        world_id = -1
-        elems=root.findall('include')
-        for elem in elems:
-            for elem_items in elem:
-                if elem_items[1].str('empty_world.launch'):
-                    args = elem.getchildren()
-                    for k,v in args:
-                        if v.find('worlds/test'):
-                            world_ind = v.find('.world')
-                            world_id = int(v[world_ind-1])
-                            break
-        return world_id
-
-    # find pick list id
-    def get_pick_list_id():
-        elems = root.findall('rosparam')
-        ipdb.set_trace()
-        pick_list_id = -1
-        for elem in elems:
-            for items in elem:
-                filestr = [x[1] for x in items if x[0]=='file']
-                filestr = filestr[0]
-                if filestr.find('pick_list'):
-                    ind = filestr.find('.yaml')
-                    pick_list_id = int(filestr[ind-1])
-
-        return pick_list_id
-
-    pick_list_id = get_pick_list_id()
-    world_id = get_world_id()
-    return pick_list_id, world_id
-
-
 # function to load parameters and request PickPlace service
 def pr2_mover(object_list):
 
@@ -320,36 +282,9 @@ def pr2_mover(object_list):
 
     # TODO: Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
 
-    if 0:
-        # Wait for 'pick_place_routine' service to come up
-        rospy.wait_for_service('pick_place_routine')
-
-        try:
-            pick_place_routine = rospy.ServiceProxy('pick_place_routine', PickPlace)
-
-            # TODO: Insert your message variables to be sent as a service request
-            resp = pick_place_routine(TEST_SCENE_NUM, OBJECT_NAME, WHICH_ARM, PICK_POSE, PLACE_POSE)
-            print ("Response: ",resp.success)
-
-        except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
-
-    # TODO: Output your request parameters into output yaml file
-
-
 
 if __name__ == '__main__':
 
-  if 0:
-      xmlfile = '/home/robond/catkin_ws/src/RoboND-Perception-Project/pr2_robot/launch/pick_place_project.launch'
-      world_id, pick_id =  parse_launch_file(xmlfile)
-
-  if 0:
-      indir = '/home/robond/data'
-      pcd_data = pcl.load('{}/table_scene_lms400.pcd'.format(indir))
-      filtered_pcd = statistical_filter(pcd)
-      pcl.save(filtered_pcd, "{}/filtered_table.pcd".format(indir))
-  if 1:
     # TODO: ROS node initialization
     rospy.init_node('recognition', anonymous=True)
 
@@ -367,11 +302,10 @@ if __name__ == '__main__':
     detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
 
     # TODO: Load Model From disk
-    outdir =  '/home/robond/data/object_recognition/'
+    model_dir =  '../../data/train/'
     version=7; nbins=64; samples=500; kernel_type='linear'; cost=10
     model_file = 'model{}_samples{}_nbins{}_kernel_{}_C_{}.sav'.format(version, samples, nbins,  kernel_type, cost)
-    # model_name = 'model6_nbin64.sav'
-    full_model_name = '{}/{}'.format(outdir,model_file)
+    full_model_name = '{}/{}'.format(model_dir,model_file)
     model = pickle.load(open(full_model_name, 'rb'))
     print ("Loaded the model")
 
