@@ -71,9 +71,9 @@ The output of the three setup is recorded in the yaml files below
 ![output_3.yaml](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/output_3.yaml)
 
  Here are the screen shots with the labels shown in rviz 
-![scene1](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_1.png)
-![scene2](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_2.png)
-![scene3](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_3.png))
+- Scene1 ![scene1](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_1.png)
+- Scene2 ![scene2](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_2.png)
+- Scene3 ![scene3](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_output/test_scene_3.png))
 
 ## Discussion 
 **Issues with Classifier Generalization and Fixes** 
