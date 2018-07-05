@@ -1,9 +1,4 @@
----
-### Writeup / README
 
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  
-
-You're reading it!
 
 ### Exercise 1, 2 and 3 pipeline implemented
 #### 1. Complete Exercise 1 steps. Pipeline for filtering and RANSAC plane fitting implemented.
@@ -12,6 +7,7 @@ You're reading it!
 
 ![screenshots]
 (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/cloud_with_noise.png)
+
 (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/exercises/filtered_point_cloud.png)
 
 
@@ -58,7 +54,6 @@ Here is an example of how to include an image in your writeup.
      ![exercise-3 - confusion matrix - normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/confusion_matrix_norm_version7_samples500_nbins64_kernel_linear_C10.png)
      [exercise-3 - confusion matrix - un-normalized] (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/train/confusion_matrix_version7_samples500_nbins64_kernel_linear_C10.png)
 
-![demo-1](https://user-images.githubusercontent.com/20687560/28748231-46b5b912-7467-11e7-8778-3095172b7b19.png)
 
 ![demo-1](https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_1.yaml)
 (https://github.com/kitu2007/RoboND-Perception-Project/blob/master/data/final_exercise/output_2.yaml)
