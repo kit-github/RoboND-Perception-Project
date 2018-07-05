@@ -1,5 +1,10 @@
 
 
+### How to run the code  
+The main code is in the file RoboND-Perception/pr2_robot/scripts/pr2_project.py. Please call rosrun pr2_robot pr2_project.py or python pr2_project.py
+
+The train SVM model is saved in the following folder: RoboND-Perception/data/train folder
+
 ### Exercise 1, 2 and 3 pipeline implemented
 #### 1. Complete Exercise 1 steps. Pipeline for filtering and RANSAC plane fitting implemented.
 
